@@ -36,6 +36,14 @@ export default function Dashboard() {
     const res = await fetch("/api/points/latest", {
       headers: { Authorization: `Bearer ${token}` },
     });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error("latest failed:", res.status, text);
+      setLoading(false);
+      return;
+    }
+
     const json = await res.json();
     setItems(json.items ?? []);
     setLoading(false);
