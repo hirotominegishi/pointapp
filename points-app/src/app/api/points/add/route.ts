@@ -15,11 +15,11 @@ export async function POST(req: Request) {
   const userId = data.user.id;
 
   const body = await req.json().catch(() => null);
-  const provider = body?.provider as "rakuten" | "dpoint";
+  const provider = (body?.provider ?? "").toString();
   const points = Number(body?.points);
   const note = typeof body?.note === "string" ? body.note : null;
 
-  if (!["rakuten", "dpoint"].includes(provider) || !Number.isFinite(points)) {
+  if (!provider || !Number.isFinite(points)) {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
 

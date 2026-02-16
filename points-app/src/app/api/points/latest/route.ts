@@ -18,29 +18,37 @@ export async function GET(req: Request) {
 
   const [rows] = await pool.execute<any[]>(
     `
-    SELECT
-      a.id as account_id,
-      a.provider,
-      a.nickname,
-      s.points,
-      s.captured_at
-    FROM point_accounts a
-    LEFT JOIN (
-      SELECT ps.*
-      FROM point_snapshots ps
-      JOIN (
-        SELECT account_id, MAX(captured_at) as max_captured_at
+  SELECT
+    a.id AS account_id,
+    a.provider,
+    a.nickname,
+    s.points,
+    s.captured_at,
+    s.note
+  FROM point_accounts a
+  LEFT JOIN (
+    SELECT ps.*
+    FROM point_snapshots ps
+    JOIN (
+      SELECT account_id, MAX(id) AS max_id
+      FROM point_snapshots
+      WHERE (account_id, captured_at) IN (
+        SELECT account_id, MAX(captured_at)
         FROM point_snapshots
         GROUP BY account_id
-      ) latest
-      ON ps.account_id = latest.account_id AND ps.captured_at = latest.max_captured_at
-    ) s
+      )
+      GROUP BY account_id
+    ) last1
+      ON ps.account_id = last1.account_id
+     AND ps.id = last1.max_id
+  ) s
     ON a.id = s.account_id
-    WHERE a.user_id = ?
-    ORDER BY a.provider
-    `,
+  WHERE a.user_id = ?
+  ORDER BY a.provider
+  `,
     [userId]
   );
+
 
   return NextResponse.json({ items: rows });
 }

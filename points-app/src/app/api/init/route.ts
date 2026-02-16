@@ -33,15 +33,20 @@ export async function POST(req: Request) {
   );
   const existing = new Set(rows.map((r) => r.provider));
 
-  const providers: Array<"rakuten" | "dpoint"> = ["rakuten", "dpoint"];
+  // providers を取得
+  const [providers] = await pool.execute<any[]>(
+    `SELECT code, name FROM point_providers ORDER BY id`
+  );
+
+  // user のアカウントを用意（存在しなければ作る）
   for (const p of providers) {
-    if (!existing.has(p)) {
-      await pool.execute(
-        `INSERT INTO point_accounts (user_id, provider, nickname) VALUES (?, ?, ?)`,
-        [userId, p, p === "rakuten" ? "楽天ポイント" : "dポイント"]
-      );
-    }
+    await pool.execute(
+      `INSERT IGNORE INTO point_accounts (user_id, provider, nickname)
+     VALUES (?, ?, ?)`,
+      [userId, p.code, p.name]
+    );
   }
+
 
   return NextResponse.json({ ok: true });
 }
