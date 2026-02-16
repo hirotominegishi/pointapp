@@ -32,9 +32,24 @@ export default function Home() {
 
   const signIn = async () => {
     setMsg("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setMsg(error.message);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password: password.trim(),
+    });
+    if (error) setMsg("メールアドレスかパスワードが違います。");
   };
+
+  const [mode, setMode] = useState<"login" | "reset">("login");
+
+  const sendResetEmail = async () => {
+    setMsg("メールアドレスを入力してください。");
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) setMsg("メールアドレスを入力してください。");
+    else setMsg("パスワード再設定メールを送信しました。メールを確認してください。");
+  };
+
 
   return (
     <main style={{ maxWidth: 520, margin: "40px auto", padding: 16 }}>
@@ -69,7 +84,26 @@ export default function Home() {
           >
             新規登録
           </button>
+          
+
         </div>
+        <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between" }}>
+            <button
+              onClick={() => setMode(mode === "login" ? "reset" : "login")}
+              style={{ background: "transparent", border: "none", color: "#06c", cursor: "pointer" }}
+            >
+              {mode === "login" ? "パスワードを忘れた" : "ログインに戻る"}
+            </button>
+          </div>
+
+          {mode === "reset" && (
+            <button
+              onClick={sendResetEmail}
+              style={{ padding: 12, borderRadius: 10, border: "1px solid #333", marginTop: 10, width: "100%" }}
+            >
+              再設定メールを送る
+            </button>
+          )}
 
         {msg && <div style={{ color: "#b00" }}>{msg}</div>}
       </div>
